@@ -12,7 +12,7 @@ namespace ExemploDapperOracle.Infra.Repositories
 		{
 			using var conexao = _dataContext.AbrirConexao();
 
-			var sql = $"select * from {_tabela} where id = @id;";
+			var sql = $"select * from {_tabela} where id = :id";
 
 			return conexao.QuerySingleOrDefault<T>(sql, new { id })!;
 		}
@@ -21,13 +21,17 @@ namespace ExemploDapperOracle.Infra.Repositories
 		{
 			using var conexao = _dataContext.AbrirConexao();
 
-			var sql = $"select * from {_tabela};";
+			var sql = $"select * from {_tabela}";
 
 			return conexao.Query<T>(sql);
 		}
 		public int Incluir(Dictionary<string, dynamic> obj)
 		{
 			using var conexao = _dataContext.AbrirConexao();
+
+			var idIdentity = conexao.Query<int>($"select count(id) from {_tabela}", obj).Single();
+
+			obj["id"] = idIdentity + 1;
 
 			var sql = @$"insert into {_tabela} 
 						 values(";
@@ -36,16 +40,16 @@ namespace ExemploDapperOracle.Infra.Repositories
 			{
 				if (obj.Last().Equals(item))
 				{
-					sql += string.Concat($"@{item.Key});");
+					sql += string.Concat($":{item.Key})");
 					continue;
 				}
 
-				sql += string.Concat($"@{item.Key},");
+				sql += string.Concat($":{item.Key},");
 			}
 
-			sql += string.Concat($"SELECT CAST(SCOPE_IDENTITY() as int)");
+			conexao.Query<T>(sql, obj);
 
-			return conexao.ExecuteScalar<int>(sql, obj);
+			return idIdentity;
 		}
 
 		public void Alterar(int id, Dictionary<string, dynamic> obj)
@@ -59,8 +63,8 @@ namespace ExemploDapperOracle.Infra.Repositories
 			{
 				var item = obj.First();
 
-				sql += string.Concat($"{item.Key} = @{item.Key}");
-				sql += string.Concat("where id = @id;");
+				sql += string.Concat($"{item.Key} = :{item.Key}");
+				sql += string.Concat("where id = :id;");
 
 				conexao.ExecuteReader(sql, obj);
 			}
@@ -69,13 +73,13 @@ namespace ExemploDapperOracle.Infra.Repositories
 			{
 				if (obj.Last().Equals(item))
 				{
-					sql += string.Concat($"{item.Key} = @{item.Key} ");
+					sql += string.Concat($"{item.Key} = :{item.Key} ");
 					continue;
 				}
-				sql += string.Concat($"{item.Key} = @{item.Key}, ");
+				sql += string.Concat($"{item.Key} = :{item.Key}, ");
 			}
 
-			sql += string.Concat("where id = @id;");
+			sql += string.Concat("where id = :id");
 
 			obj.Add("id", id);
 
@@ -86,7 +90,7 @@ namespace ExemploDapperOracle.Infra.Repositories
 		{
 			using var conexao = _dataContext.AbrirConexao();
 
-			var sql = $"delete from {_tabela} where id = @id;";
+			var sql = $"delete from {_tabela} where id = :id;";
 
 			conexao.Execute(sql, new { id });
 		}

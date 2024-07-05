@@ -19,10 +19,11 @@ namespace ExemploDapperOracle.Application.Services
 		{
 			var parametros = new Dictionary<string, dynamic>
 			{
+				{ "id", 0 },
 				{ "nome", cliente.Nome! },
 				{ "data_cadastro", DateTime.Now },
 				{ "data_alteracao", null! },
-				{ "status", true }
+				{ "status", 1 }
 			};
 
 			var clienteResponse = _clienteRepository.Incluir(parametros);
